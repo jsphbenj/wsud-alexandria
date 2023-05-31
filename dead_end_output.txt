@@ -1,0 +1,36 @@
+Dead Ends as Counted with dead_end_counter.py
+
+Total Count of Dead Ends is 5929
+    Note: this includes highways and other roads cut off when importing road layer from Open Street Map.
+
+MB_01a: 735 dead-end roads.
+MB_01b: 58 dead-end roads.
+
+MB_02a: 239 dead-end roads.
+MB_02b: 150 dead-end roads.
+MB_02c: 92 dead-end roads.
+MB_02d: 394 dead-end roads.
+
+MB_03a: 107 dead-end roads.
+MB_03b: 2 dead-end roads.
+MB_03c: 79 dead-end roads.
+MB_03d: 295 dead-end roads.
+
+MB_04a: 240 dead-end roads.
+MB_04b: 112 dead-end roads.
+
+MB_05a: 651 dead-end roads.
+MB_05b: 1212 dead-end roads.
+MB_05c: 153 dead-end roads.
+
+MB_06:  0 dead-end roads.
+
+MB_07a: 20 dead-end roads.
+MB_07b: 210 dead-end roads.
+MB_07c: 53 dead-end roads.
+MB_07d: 58 dead-end roads.
+
+MB_08a: 107 dead-end roads.
+MB_08b: 10 dead-end roads.
+
+MB_09:  101 dead-end roads.
