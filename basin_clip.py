@@ -8,14 +8,14 @@ arcpy.env.overwriteOutput = True
 arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\DAAD1.gdb"
 land_class_gdb = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\MBLandClass.gdb"
 bounds_fc = "basins1"
-landclass_fc = "LandClip"
-
+landclass_fc = "RoadsClip"
+'''
 with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
     for row in cursor:
         # Makes a landclass layer for every MB
-        mb_landclass_clip = land_class_gdb + "\\" + row[0].replace("MB ", "landclass_")
+        mb_landclass_clip = land_class_gdb + "\\" + row[0].replace("MB ", "urbanclip_")
         where = "Name = '{}'".format(row[0])
-
+        
         # Create a feature layer from the bounds_fc
         arcpy.management.MakeFeatureLayer(bounds_fc, "bounds_layer")
 
@@ -31,16 +31,15 @@ with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
         # Perform the clip operation
         arcpy.analysis.Clip(landclass_layer, "mb_selection", mb_landclass_clip)
         print("CLIPPED: " + mb_landclass_clip)
-
+'''
 # Calculate Area for EACH Land Class Type
 
 arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\MBLandClass.gdb"
 mb_fc = arcpy.ListFeatureClasses()
 for fc in mb_fc:
     arcpy.CalculateGeometryAttributes_management(fc, [["Area", "AREA_GEODESIC"]], area_unit="SQUARE_KILOMETERS")
-    print(fc)
     with arcpy.da.UpdateCursor(fc, ("Class_name", "Area")) as cursorU:
         for rowU in cursorU:
-            rounded_area = round(rowU[1], 2)
-            print(rowU[0] + ": " + str(rounded_area))
-        print("")
+            if rowU[0] == "Urban":
+                rounded_area = round(rowU[1], 2)
+                print(fc + ", " + str(rounded_area))
