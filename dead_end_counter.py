@@ -5,23 +5,17 @@
 import arcpy
 arcpy.env.overwriteOutput = True
 
-'''
-# input variables soft
-arcpy.env.workspace = arcpy.GetParameterAsText(0)
-bounds_fc = arcpy.GetParameterAsText(1)
-roads_fc  = arcpy.GetParameterAsText(2)
-'''
-
 # input variables hard
 arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\DAAD1.gdb"
 bounds_fc = "basins1"
-roads_fc  = "all_roads"
+roads_fc  = "roads_and_bound"
 
 # identify the dead ends in fc
 dangle_fc = "dangle_pts"
 arcpy.management.FeatureVerticesToPoints(roads_fc, dangle_fc, "DANGLE")
 total_de_count = arcpy.management.GetCount(dangle_fc)
-print("Total Count of Dead Ends is " + str(total_de_count))
+print("Total, " + str(total_de_count))
+dead_end_check = []
 
 # dead ends in each microbasin
 with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
@@ -31,4 +25,11 @@ with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
         arcpy.conversion.ExportFeatures(bounds_fc, basin_fc, where)
         dangle_select = arcpy.management.SelectLayerByLocation(dangle_fc, "WITHIN", basin_fc)
         basin_de_count = arcpy.management.GetCount(dangle_select)
-        print("Within " + str(basin_fc) + ", there are " + str(basin_de_count) + " dead-end roads.")
+        dead_end_check.append(basin_de_count)
+        print(str(basin_fc) + ", " + str(basin_de_count))
+
+for ele in range(0, len(dead_end_check)):
+    total_check = 0
+    total_check += int(dead_end_check[ele])
+
+print("Total Check," + str(total_check))
