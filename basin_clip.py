@@ -1,5 +1,9 @@
+# Created by: Joseph Benjamin
+# Date: June 2023
+
+# Objective:
 # This script will clip the land classification polygon to each MB, then calculate
-# (1) total land area, (2-5) land area for each classification
+# the land area for each classification (urban, water, barren, vegetated).
 
 import arcpy
 arcpy.env.overwriteOutput = True
@@ -9,7 +13,7 @@ arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects
 land_class_gdb = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\MBLandClass.gdb"
 bounds_fc = "basins1"
 landclass_fc = "RoadsClip"
-'''
+
 with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
     for row in cursor:
         # Makes a landclass layer for every MB
@@ -31,15 +35,13 @@ with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
         # Perform the clip operation
         arcpy.analysis.Clip(landclass_layer, "mb_selection", mb_landclass_clip)
         print("CLIPPED: " + mb_landclass_clip)
-'''
-# Calculate Area for EACH Land Class Type
 
+# Calculate Area for EACH Land Class Type
 arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\MBLandClass.gdb"
 mb_fc = arcpy.ListFeatureClasses()
 for fc in mb_fc:
     arcpy.CalculateGeometryAttributes_management(fc, [["Area", "AREA_GEODESIC"]], area_unit="SQUARE_KILOMETERS")
     with arcpy.da.UpdateCursor(fc, ("Class_name", "Area")) as cursorU:
         for rowU in cursorU:
-            if rowU[0] == "Urban":
-                rounded_area = round(rowU[1], 2)
-                print(fc + ", " + str(rounded_area))
+            rounded_area = round(rowU[1], 2)
+            print(fc + ", " + str(rounded_area))

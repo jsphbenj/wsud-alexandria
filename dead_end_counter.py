@@ -1,9 +1,9 @@
 # Created by: Joseph Benjamin
 # Date: June 2023
 
-# Objective: This script will export all of the dead-end roads within a polygon,
-# then count the number of features to give the number of "culdesacs",
-# aka dead end roads, within each micro-basin (mb)
+# Objective: This script will export all dead-end roads within a polygon,
+# then count the number of features to give the number of
+# dead end roads within each micro-basin (mb)
 
 import arcpy
 arcpy.env.overwriteOutput = True
