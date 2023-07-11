@@ -12,7 +12,7 @@ arcpy.env.overwriteOutput = True
 arcpy.env.workspace = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\DAAD1.gdb"
 land_class_gdb = r"C:\Users\joeyb\OneDrive\Public\Documents\ArcGIS\Projects\DAAD1\MBLandClass.gdb"
 bounds_fc = "basins1"
-landclass_fc = "RoadsClip"
+landclass_fc = "PolyLand"
 
 with arcpy.da.SearchCursor(bounds_fc, ("Name")) as cursor:
     for row in cursor:
