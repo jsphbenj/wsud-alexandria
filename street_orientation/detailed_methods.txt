@@ -1,0 +1,15 @@
+PROCESS STEPS
+
+In the Anaconda Command Prompt:
+    1. Read the all_roads.shp file
+    2. Printed all columns to figure out relevant fields
+        ["full_id", "osm_id", "osm_type", "alt_name_e", "name_en", "oneway", "geometry", "highway"]
+    3. Deleted all other fields
+    4. Clipped the roads to each microbasin
+    5. Calculated Line Bearings (azimuths) for each street within each microbasin
+        5.1. Created line_bearing(gdf)
+    6. Calculate Bins in MB Layers
+        6.1. Read bin_key.csv and create dictionary based off of it
+
+
+
