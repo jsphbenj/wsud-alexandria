@@ -1,7 +1,9 @@
 # Created 11 July 2023 by Joseph Benjamin
 
-import os, pyproj, csv
+import os, pyproj, csv, math
 import geopandas as gpd
+import plotly.graph_objects as go
+import plotly.io as pio
 
 def line_bearing(gdf):
     index = 0
@@ -119,10 +121,13 @@ for root, directories, files in os.walk(library):
                     # place the fwd_bearing into the appropriate bearing_list in the dictionary
                     mini = bins[bin][0]
                     maxi = bins[bin][1]
-                    bearing = float(gdf.at[index, 'fwd_bear'])
+                    bearing1 = float(gdf.at[index, 'fwd_bear'])
+                    bearing2 = float(gdf.at[index, 'back_bear'])
                     try:
-                        if mini <= int(round(bearing)) < maxi:
-                            bins[bin][2].append(bearing)
+                        if mini <= int(round(bearing1)) < maxi:
+                            bins[bin][2].append(bearing1)
+                        if mini <= int(round(bearing2)) < maxi:
+                            bins[bin][2].append(bearing2)
                     except:
                         x = 0
             # Create new columns in basins boundary shp for each bin.
@@ -131,14 +136,79 @@ for root, directories, files in os.walk(library):
             for bin in bins:
                 basin_bounds.at[mb_index, bin] = int(len(bins[bin][2]))
             print('Bearings placed in bins for ' + file)
-# Save to new csv, shp
+#       Save to new csv, shp
 basin_bins_name = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation' \
                   r'\outputs\basin_bins\basin_bins'
 basin_bounds.to_file(basin_bins_name + '.shp')
 basin_bounds.to_csv(basin_bins_name + '.csv')
 
+# 7. Use Bins to Create Polar Histogram
 
+basin_bins = gpd.read_file(r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation'
+                           r'\outputs\basin_bins\basin_bins.shp')
+for index, row in basin_bins.iterrows():
+    counter = 1
+    radii = []
+    theta = []
 
+    while counter <= 36:
+        bin_value = basin_bins[str(counter)][index]
+        #theta.append(450-((counter-1)*10))
+        radii.append(bin_value)
+        counter += 1
+    fig = go.Figure(go.Barpolar(
+        r=radii,
+        theta0=0,
+        dtheta=10,
+        marker_color="black",
+        opacity=0.6
+    ))
 
-# todo Use Bins to Create Polar Histogram
-# use matplotlib
+    fig.update_layout(
+        template=None,
+        title = basin_bins['Name'][index],
+        font_size=30,
+        polar = dict(
+            radialaxis = dict(range=[0, max(radii)], showticklabels=False, ticks=''),
+            angularaxis = dict(tickmode='array',
+                               tickvals=[0, 90, 180, 270],
+                               ticktext=['N', 'E', 'S', 'W'],
+                               direction='clockwise',
+                               gridwidth=0
+                               )
+        )
+    )
+
+    file_name = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation\outputs' \
+                r'\polar_histograms\p_hist_' + basin_bins['Name'][index].replace(' ', '_') + '.png'
+    pio.write_image(fig, file_name)
+    print('File Created:' + basin_bins['Name'][index])
+
+# Calculate Ho and phi
+for index, row in basin_bins.iterrows():
+    counter = 1
+    total = 0
+    ho = 0
+    h_max = 3.854
+    h_g = 1.386
+
+    while counter <= 36:
+        total += basin_bins[str(counter)][index]
+        counter += 1
+    basin_bins.at[index, 'Total'] = total
+
+    counter = 1
+    while counter <= 36:
+        proportion = basin_bins[str(counter)][index]/total
+        ho += proportion * math.log(proportion) * -1
+        counter += 1
+
+    basin_bins.at[index, 'Ho'] = ho
+
+    phi = 1 - (((ho - h_g)/(h_max - h_g)) ** 2)
+    basin_bins.at[index, 'phi'] = phi
+
+new_file_path = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation' \
+                    r'\outputs\basin_bins\basin_bins_analysis'
+basin_bins.to_file(new_file_path)
+
