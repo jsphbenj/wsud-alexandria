@@ -10,6 +10,10 @@ In the Anaconda Command Prompt:
         5.1. Created line_bearing(gdf)
     6. Calculate Bins in MB Layers
         6.1. Read bin_key.csv and create dictionary based off of it
-
+    7. Create Polar Histogram using bins in basin_bins
+    8. Calculated Ho and Phi and saved them in basin_bins_analysis
+        Ho: Street Orientation Entropy
+        Phi: Orientation-Order Indicator
+        based on Urban spatial order (Boeing 2019).
 
 

@@ -43,6 +43,7 @@ basin_bounds = gpd.read_file(r'downloads\basins\basins.shp')
 all_roads = gpd.read_file(r'downloads\Roads_all\Roads_all.shp')
 
 # 4. CLIP STREETS TO EACH MICROBASIN
+'''
 for index, row in basin_bounds.iterrows():
     # perform the clip function
     clipped = gpd.clip(all_roads, row.geometry)
@@ -58,8 +59,10 @@ for index, row in basin_bounds.iterrows():
     print('Created: ' + file_name)
 print('Streets Clipped!')
 print()
+'''
 
 # 5. Calculate Line Bearings
+'''
 for root, directories, files in os.walk(r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation\outputs\roads_clipped_by_mb'):
         for file in files:
             if file.endswith('.shp'):
@@ -84,12 +87,14 @@ for root, directories, files in os.walk(r'C:\Users\joeyb\OneDrive\Public\Documen
                 gdf.to_file(new_file_path)
                 print('New file created with line bearing.')
                 print('')
+'''
 
 # 6. Calculate Bins in MB Layers
 # 6.1. Read csv and create dictionary based off of it with the bin name, degree range, and the bearings that fall into
 #      that classification. The bearings_list was kept empty so this dictionary can be reused.
-bins = {}
+bins_dict = {}
 bin_key_path = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation\outputs\bin_key.csv'
+# 6.2. Takes the key csv and reads it into a dictionary
 with open(bin_key_path, 'r') as csvfile:
     reader = csv.reader(csvfile)
     next(reader)  # skip header row
@@ -98,7 +103,8 @@ with open(bin_key_path, 'r') as csvfile:
         mini = int(row[1])
         maxi = int(row[2])
         bearings_list = []
-        bins[bin_name] = (mini, maxi, bearings_list)
+        bins_dict[bin_name] = (mini, maxi, bearings_list)
+del bin_name, mini, maxi, bearings_list
 print('Bins created.')
 
 library = 'C:\\Users\\joeyb\\OneDrive\\Public\\Documents\\GitHub\\wsud-alexandria\\street_orientation\\outputs' \
@@ -106,7 +112,8 @@ library = 'C:\\Users\\joeyb\\OneDrive\\Public\\Documents\\GitHub\\wsud-alexandri
 for root, directories, files in os.walk(library):
     for file in files:
         if file.endswith('.shp'):
-            gdf = gpd.read_file(library + file)
+            bearings_shp = gpd.read_file(library + file)
+            print('Placing ' + file + ' into bins')
             # extract the basin number
             start_str = "line_bearing_"
             end_str = ".shp"
@@ -116,26 +123,36 @@ for root, directories, files in os.walk(library):
 
             mb_number = file[start_index:end_index]
 
-            for index, row in gdf.iterrows():
-                for bin in bins:
+            for index, row in bearings_shp.iterrows():
+                done_check = 0
+                for bin in bins_dict:
                     # place the fwd_bearing into the appropriate bearing_list in the dictionary
-                    mini = bins[bin][0]
-                    maxi = bins[bin][1]
-                    bearing1 = float(gdf.at[index, 'fwd_bear'])
-                    bearing2 = float(gdf.at[index, 'back_bear'])
-                    try:
-                        if mini <= int(round(bearing1)) < maxi:
-                            bins[bin][2].append(bearing1)
-                        if mini <= int(round(bearing2)) < maxi:
-                            bins[bin][2].append(bearing2)
-                    except:
-                        x = 0
+                    mini = bins_dict[bin][0]
+                    maxi = bins_dict[bin][1]
+                    bearing1 = float(bearings_shp.at[index, 'fwd_bear'])
+                    bearing2 = float(bearings_shp.at[index, 'back_bear'])
+                    if math.isnan(bearing1):
+                        print('MultiLineString @ ' + str(index))
+                        done_check += 2
+                    elif mini <= int(round(bearing1)) < maxi:
+                        bins_dict[bin][2].append(bearing1)
+                        done_check += 1
+                    elif mini <= int(round(bearing2)) < maxi:
+                        bins_dict[bin][2].append(bearing2)
+                        done_check += 1
+
+                    if done_check == 2:
+                        break
+
             # Create new columns in basins boundary shp for each bin.
             mb_name = 'MB ' + mb_number
             mb_index = basin_bounds.index[basin_bounds['Name'] == mb_name][0]
-            for bin in bins:
-                basin_bounds.at[mb_index, bin] = int(len(bins[bin][2]))
+            dict_length_total = 0
+            for bin in bins_dict:
+                dict_length_total += int(len(bins_dict[bin][2]))
+                basin_bounds.at[mb_index, bin] = int(len(bins_dict[bin][2]))
             print('Bearings placed in bins for ' + file)
+            print(str(dict_length_total) + ' ~ ' + str(index) + 'x 2  ?')
 #       Save to new csv, shp
 basin_bins_name = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation' \
                   r'\outputs\basin_bins\basin_bins'
@@ -184,7 +201,7 @@ for index, row in basin_bins.iterrows():
     pio.write_image(fig, file_name)
     print('File Created:' + basin_bins['Name'][index])
 
-# Calculate Ho and phi
+# 8. Calculate Ho and phi
 for index, row in basin_bins.iterrows():
     counter = 1
     total = 0
