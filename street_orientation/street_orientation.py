@@ -43,7 +43,6 @@ basin_bounds = gpd.read_file(r'downloads\basins\basins.shp')
 all_roads = gpd.read_file(r'downloads\Roads_all\Roads_all.shp')
 
 # 4. CLIP STREETS TO EACH MICROBASIN
-'''
 for index, row in basin_bounds.iterrows():
     # perform the clip function
     clipped = gpd.clip(all_roads, row.geometry)
@@ -59,10 +58,9 @@ for index, row in basin_bounds.iterrows():
     print('Created: ' + file_name)
 print('Streets Clipped!')
 print()
-'''
+
 
 # 5. Calculate Line Bearings
-'''
 for root, directories, files in os.walk(r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation\outputs\roads_clipped_by_mb'):
         for file in files:
             if file.endswith('.shp'):
@@ -87,25 +85,12 @@ for root, directories, files in os.walk(r'C:\Users\joeyb\OneDrive\Public\Documen
                 gdf.to_file(new_file_path)
                 print('New file created with line bearing.')
                 print('')
-'''
 
 # 6. Calculate Bins in MB Layers
 # 6.1. Read csv and create dictionary based off of it with the bin name, degree range, and the bearings that fall into
 #      that classification. The bearings_list was kept empty so this dictionary can be reused.
 bins_dict = {}
 bin_key_path = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation\outputs\bin_key.csv'
-# 6.2. Takes the key csv and reads it into a dictionary
-with open(bin_key_path, 'r') as csvfile:
-    reader = csv.reader(csvfile)
-    next(reader)  # skip header row
-    for row in reader:
-        bin_name = row[0]
-        mini = int(row[1])
-        maxi = int(row[2])
-        bearings_list = []
-        bins_dict[bin_name] = (mini, maxi, bearings_list)
-del bin_name, mini, maxi, bearings_list
-print('Bins created.')
 
 library = 'C:\\Users\\joeyb\\OneDrive\\Public\\Documents\\GitHub\\wsud-alexandria\\street_orientation\\outputs' \
           '\\shp_w_line_bearings\\'
@@ -114,6 +99,7 @@ for root, directories, files in os.walk(library):
         if file.endswith('.shp'):
             bearings_shp = gpd.read_file(library + file)
             print('Placing ' + file + ' into bins')
+
             # extract the basin number
             start_str = "line_bearing_"
             end_str = ".shp"
@@ -123,14 +109,30 @@ for root, directories, files in os.walk(library):
 
             mb_number = file[start_index:end_index]
 
+            # 6.2. Takes the key csv and reads it into a dictionary
+            with open(bin_key_path, 'r') as csvfile:
+                reader = csv.reader(csvfile)
+                next(reader)  # skip header row
+                for row in reader:
+                    bin_name = row[0]
+                    mini = int(row[1])
+                    maxi = int(row[2])
+                    bearings_list = []
+                    bins_dict[bin_name] = (mini, maxi, bearings_list)
+            del bin_name, mini, maxi, bearings_list
+            print('Bins created.')
+
             for index, row in bearings_shp.iterrows():
                 done_check = 0
+                # place the fwd_bearing into the appropriate bearing_list in the dictionary
+
+                bearing1 = float(bearings_shp.at[index, 'fwd_bear'])
+                bearing2 = float(bearings_shp.at[index, 'back_bear'])
                 for bin in bins_dict:
-                    # place the fwd_bearing into the appropriate bearing_list in the dictionary
+
                     mini = bins_dict[bin][0]
                     maxi = bins_dict[bin][1]
-                    bearing1 = float(bearings_shp.at[index, 'fwd_bear'])
-                    bearing2 = float(bearings_shp.at[index, 'back_bear'])
+
                     if math.isnan(bearing1):
                         print('MultiLineString @ ' + str(index))
                         done_check += 2
@@ -151,8 +153,11 @@ for root, directories, files in os.walk(library):
             for bin in bins_dict:
                 dict_length_total += int(len(bins_dict[bin][2]))
                 basin_bounds.at[mb_index, bin] = int(len(bins_dict[bin][2]))
+            basin_bounds.at[mb_index, 'Total'] = dict_length_total
             print('Bearings placed in bins for ' + file)
             print(str(dict_length_total) + ' ~ ' + str(index) + 'x 2  ?')
+            print('')
+
 #       Save to new csv, shp
 basin_bins_name = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation' \
                   r'\outputs\basin_bins\basin_bins'
@@ -170,8 +175,8 @@ for index, row in basin_bins.iterrows():
 
     while counter <= 36:
         bin_value = basin_bins[str(counter)][index]
-        #theta.append(450-((counter-1)*10))
-        radii.append(bin_value)
+        bin_proportion = bin_value / basin_bins['Total'][index]
+        radii.append(bin_proportion)
         counter += 1
     fig = go.Figure(go.Barpolar(
         r=radii,
@@ -204,20 +209,14 @@ for index, row in basin_bins.iterrows():
 # 8. Calculate Ho and phi
 for index, row in basin_bins.iterrows():
     counter = 1
-    total = 0
+    total = basin_bins['Total'][index]
     ho = 0
     h_max = 3.854
     h_g = 1.386
 
     while counter <= 36:
-        total += basin_bins[str(counter)][index]
-        counter += 1
-    basin_bins.at[index, 'Total'] = total
-
-    counter = 1
-    while counter <= 36:
-        proportion = basin_bins[str(counter)][index]/total
-        ho += proportion * math.log(proportion) * -1
+        proportion = total
+        ho += -(proportion * math.log(proportion))
         counter += 1
 
     basin_bins.at[index, 'Ho'] = ho
@@ -228,4 +227,5 @@ for index, row in basin_bins.iterrows():
 new_file_path = r'C:\Users\joeyb\OneDrive\Public\Documents\GitHub\wsud-alexandria\street_orientation' \
                     r'\outputs\basin_bins\basin_bins_analysis'
 basin_bins.to_file(new_file_path)
+basin_bins.to_csv(new_file_path + '.csv')
 
